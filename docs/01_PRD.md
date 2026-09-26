@@ -3,106 +3,87 @@
 - Type: Bachelor capstone decision-support prototype
 - Primary prospective partner: WASAC Utility Ltd
 - Potential innovation partner: MININFRA
-- Version: 0.1
+- Version: 1.0
 
 ## Product summary
-WASAC Triage turns suspected water-network leak or abnormality reports into an explainable inspection queue. It combines flow and pressure deviations, signal duration, repeat events, nearby reports, and asset criticality. It explains each ranking and leaves inspection decisions with utility staff.
+WASAC Triage ranks suspected water-network leak or abnormality candidates for human inspection. It makes the baseline score explainable, shows missing inputs, and offers a separate experimental unsupervised anomaly screen. That screen explores unusual records in the current batch; it does not confirm leaks.
 
-This is a prototype. It does not confirm leaks, control valves, or treat a high score as a diagnosis. It runs on synthetic examples or a CSV approved by the data owner.
+The project is a local prototype. It has no live WASAC connection, work-order integration, valve control, or production claim. Built-in records are synthetic.
 
-## Problem and opportunity
-When several possible network issues are reported, staff need a consistent way to decide which location to inspect first. Signals may be noisy, incomplete, or spread across records. A transparent queue could help compare cases, show missing information, and record review decisions. Validate the actual workflow and data fields with a utility partner. The student demo does not require live utility access.
+## Problem
+Operations staff may receive several candidate reports or telemetry anomalies while having limited time for inspection. A consistent queue can help compare evidence and identify where a human reviewer may want to look first. Validate the real workflow and approved data with WASAC before claiming operational fit.
 
 ## Users
-- Operations analyst / dispatcher: imports approved records, reviews and filters the queue, inspects explanations, and exports a worklist.
-- Supervisor: reviews priority bands and data coverage, assigns inspections through existing processes, and evaluates outcomes.
-- Field technician: inspects assigned locations through existing processes and returns an outcome.
-- Student developer: implements the prototype and evaluates it on synthetic or approved examples.
+- Operations analyst / dispatcher: loads an approved list, filters and reviews candidates, exports an inspection worklist.
+- Supervisor: reviews score assumptions and outcome measures.
+- Field technician: completes inspections through existing utility processes.
+- Student developer: builds the prototype and documents its evaluation and limits.
 
 ## Goals
-1. Rank submitted candidate events consistently and transparently.
-2. Show component scores, reason codes, and input coverage.
-3. Validate a documented CSV schema and make missing data visible.
-4. Let users filter, inspect, update temporary review status, and export a queue.
-5. Define evaluation against a simple baseline before any field trial.
-6. Keep the demo usable without sensors, paid APIs, or production credentials.
+1. Create a reproducible, explainable ranking for candidate events.
+2. Make missing and invalid values visible.
+3. Demonstrate AI/data science using a separately labeled Isolation Forest experiment.
+4. Automate CSV checks, feature calculations, ranking, reason generation, and export.
+5. Compare the transparent baseline and experimental screen against reviewed outcomes before proposing a pilot.
 
-## Non-goals and boundaries
-- No claim to be Rwanda's first or only leak-related system.
-- No autonomous leak confirmation, dispatch, or operational control.
-- No household-level monitoring or customer-identifying data.
-- No connection to WASAC production systems.
-- No guaranteed reduction in water loss, response time, or cost.
-- No model trained on invented data presented as validated AI.
+## Non-goals and safeguards
+- No claim this is Rwanda's first leak-related solution.
+- No automatic leak confirmation, dispatch, or equipment control.
+- No household profiling or customer-identifying input.
+- No unauthorized utility data.
+- No assertion that a score is probability, field accuracy, or guaranteed water savings.
+- AI anomaly results do not modify or combine with the human priority score.
 
-## MVP scope
-Included: Streamlit dashboard, labeled synthetic data, CSV upload and validation, explainable 0-100 weighted score, priority band, reason codes and input coverage, district filter, case detail, session-only review status, CSV export, and a clear decision-support notice. No database or external service calls.
+## MVP features
+- Streamlit local dashboard with synthetic demo mode and CSV upload.
+- Fixed CSV schema and row-level validation.
+- Weighted 0-100 transparent score, display band, reasons, and input coverage.
+- Optional Isolation Forest screen fit and scored on the loaded batch.
+- Outlier flag and within-batch index displayed separately from priority.
+- District and band filters, case detail, session-only review status, queue export, and template download.
+- Data-quality summary and synthetic-data labels.
+- No database or outbound API calls.
 
-Deferred: login, persistent multi-user status, database, audit log, mobile forms, notifications, work-order integration, live telemetry, sensors, digital twin, production hosting, and an ML model in the operational ranking path.
+## Core user tasks and acceptance criteria
+1. Start the app and see clearly labeled synthetic records.
+2. Upload a CSV; see missing headers or a ranked queue.
+3. See invalid/missing readings reflected in coverage, not silently changed to zero.
+4. Filter cases and inspect score components and reason codes.
+5. Run or skip the experimental AI screen and see its limitations.
+6. Set a review status for the current session and export a filtered CSV.
+7. Confirm extra columns are discarded and not included in view/export.
 
-## User stories and acceptance criteria
-### Import and inspect
-- An analyst can explore synthetic data without private records.
-- An analyst can upload a CSV with the documented headers.
-- Missing required headers are listed and the incompatible file is not scored.
-- Extra columns are ignored after a warning.
-- Missing or invalid feature values reduce input coverage; they are not silently changed to zero.
-
-### Prioritize and review
-- Candidates are sorted by a reproducible score, with a band and up to two concise reasons.
-- Each score can be traced to the documented feature formulas.
-- The UI says the score is not leak probability or diagnosis.
-- Review states are Needs review, Reviewed, Assigned, or Closed, and apply only to the current session.
-- The user can download the filtered ranked queue as CSV.
-
-### Prototype targets
-- A 1,000-row CSV remains practical on a typical student laptop; record actual load time.
-- Identical input produces identical ranking.
-- When outcomes are available, compare top-K precision and recall with a simple threshold baseline.
-- Gather usability feedback from a small, consented group and report limitations.
-
-## Ranking method
-The MVP uses a transparent weighted rule, not a trained model.
-
-| Signal | Weight |
+## Baseline score
+| Component | Weight |
 |---|---:|
-| Abnormal flow increase | 18% |
+| Flow anomaly | 18% |
 | Pressure drop | 12% |
 | Signal persistence | 25% |
 | Repeat events in zone | 15% |
 | Nearby reports | 15% |
 | Asset criticality | 15% |
 
-Feature scales are in 02_DATA_SPEC.md. Missing or invalid features are omitted; remaining weights are renormalized. Input coverage is reported separately. Initial bands are High (70-100), Review (40-69.9), and Routine (0-39.9). These are demo thresholds; calibrate with partner-reviewed outcomes before field use.
+Feature scales are in docs/02_DATA_SPEC.md. Valid weights are renormalized per row when data is missing. Coverage reports the valid original weight fraction. Initial bands (High >=70, Review >=40, Routine <40) are demo assumptions that require partner review.
 
-## AI, data science, and automation
-- MVP data science: validation, feature engineering, transparent scoring, ranking, and evaluation.
-- MVP automation: CSV checks, score calculation, sorting, reason generation, and queue export.
-- Future AI experiment: compare a suitable anomaly detector, such as Isolation Forest, against the transparent baseline only after sufficient approved data and a documented evaluation set exist.
-- Staff decide what to inspect. A score must not create a confirmed leak label by itself.
+## AI and data science
+Isolation Forest operates on the six engineered 0-100 component features. It needs at least 20 rows with at least three valid components, uses median imputation, and has a fixed 10% contamination setting for this experiment. It is fit only to the currently loaded batch. Its relative outlier index is not probability or leak likelihood. Model output does not affect the baseline priority score.
 
-## Data and privacy
-Use synthetic records for public demonstrations. Obtain written authorization before using utility records. Request the smallest anonymized dataset needed. Exclude names, phone numbers, account numbers, precise household locations, and credentials. Keep demo data local and follow the data owner's access and retention rules. Input coverage is not model confidence, probability, or certainty.
+The candidate batch may contain selected events rather than representative normal network behavior. The experimental flag can change with file composition. It is not a substitute for a time-series detector, engineering threshold, or supervised model. Keep it exploratory until evaluated on approved, representative data.
 
-## Success measures
-Prototype measures: valid rows accepted, invalid input explained, reproducible rankings, reasons and coverage visible, top-K precision/recall and false-priority rate measured when labels exist, and usability feedback recorded.
-For a later approved pilot, agree the baseline period, comparison method, owner, and metrics with WASAC. Candidate measures include time to first inspection, confirmed cases among top-K inspections, repeat visits, and repair completion time. Do not infer water savings from app use alone.
+## Evaluation plan
+- Compare baseline top-K precision, recall, false-priority rate, and ranking stability against an agreed threshold baseline when reviewed outcomes exist.
+- Evaluate AI flags separately: precision/recall on reviewed cases, stability under missing data, and expert review of false positives.
+- Never report synthetic-data performance as real-world accuracy.
+- Conduct a small consented usability session and document participants, tasks, and limitations.
+- Agree pilot baseline, duration, owner, and impact measures with WASAC before a field claim.
 
-## Risks and mitigations
-
-| Risk | Mitigation |
-|---|---|
-| No operational data access | Use marked synthetic examples and request workflow feedback first. |
-| Overstated novelty | Describe the human-triage contribution and validate with supervisor and utility staff. |
-| Missing or noisy telemetry | Show input coverage and require human review. |
-| False priorities | Compare with a baseline and inspect false positives and negatives. |
-| Accidental sensitive upload | Document allowed fields, ignore extras, and do not persist uploads. |
-| Demo mistaken for production | Keep the scope notice visible. |
+## Privacy and governance
+Use synthetic records for public demos. Before utility data, get written approval for purpose, fields, access, retention, and deletion. Exclude customer identifiers, precise household coordinates, account numbers, contact details, and credentials. Review status stays in session state; uploaded records are not persisted to a database.
 
 ## Build sequence
-1. Confirm scope with supervisor.
-2. Implement the CSV schema and synthetic records.
-3. Build scoring, explanations, and queue.
-4. Add validation, export, and usability feedback.
-5. If approved records become available, compare the baseline to an anomaly model.
-6. Present measured findings and limitations; propose a supervised pilot only with partner approval.
+1. Confirm workflow and capstone scope with a supervisor/partner.
+2. Run the local synthetic demo and review scoring/data rules.
+3. Gather usability feedback.
+4. Request only approved anonymized records if a partner permits them.
+5. Establish outcome labels and baseline evaluation.
+6. Present measured results and limitations; propose a supervised pilot only with partner approval.

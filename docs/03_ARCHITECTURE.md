@@ -1,66 +1,56 @@
-# Architecture and Technology: WASAC Triage
+# Architecture: WASAC Triage
 
-## MVP architecture
+## Runtime flow
 
-    Synthetic demo CSV or user-selected CSV
-                      |
-                      v
-          Streamlit upload / data loader
-                      |
-                      v
-             Header and value checks
-                      |
-                      v
-       Feature engineering and rule score
-                      |
-                      v
-       Priority queue + reasons + coverage
-                      |
-              +-------+-------+
-              |               |
-              v               v
-       Human review UI     CSV export
-       (session only)   (filtered results)
+    Synthetic demo or user-uploaded CSV
+                   |
+                   v
+       src/schema.py: validate and normalize
+                   |
+                   v
+       src/scoring.py: explainable baseline
+                   |
+          +--------+----------+
+          |                   |
+          v                   v
+    Human review UI     src/anomaly.py
+    and CSV export      Isolation Forest
+          |                   |
+          +---- separate -----+
 
-The MVP is a local, single-process Streamlit app. It has no database, login, background service, third-party API, telemetry connector, or production integration. Extra upload columns are ignored after a warning.
+The AI screen is parallel to the baseline and never changes priority_score.
 
-## Technology stack
-MVP: Python 3.10+, Streamlit, pandas, NumPy, Plotly, and CSV. requirements.txt lists dependencies used by the app.
-Possible later additions: scikit-learn for a carefully evaluated anomaly-detection experiment; SQLite or PostgreSQL only if an approved multi-user pilot needs persistence; GIS only if an approved workflow needs mapping; authentication and hosting only after security and operational review. Do not add these to the student demo just to make it look production-ready.
+## Stack
+- Python 3.10+
+- Streamlit for the local dashboard.
+- pandas and NumPy for CSV handling, validation, and features.
+- Plotly for queue and data-quality charts.
+- scikit-learn IsolationForest for the optional experimental outlier screen.
+- CSV input/export; no database, external API, production credentials, or utility-system connector.
 
-## Component responsibilities
-- Input loader: select synthetic data or CSV, require documented headers, discard extra columns after warning, and keep uploaded data in app memory only.
-- Validator: parse numbers without replacing invalid values with zero; check baselines, non-negative measurements/counts, criticality range, and duplicate IDs; show errors and warnings.
-- Scoring engine: calculate six documented components, use only valid weights, renormalize over available weights, calculate coverage separately, and produce band and reasons deterministically.
-- Dashboard: show a synthetic-data badge, district filter, queue, explanation, temporary review status, and filtered CSV export. State that score is not leak confirmation or probability.
+## Code layout
+- app.py: pages, filters, user interaction, export.
+- src/schema.py: required headers, parsing, validation, discarded extras.
+- src/demo_data.py: deterministic fictional records.
+- src/scoring.py: component features, weighted priority, bands, reasons.
+- src/anomaly.py: separate batch-relative Isolation Forest flag.
+- docs/: product, data, architecture, privacy, and evaluation.
+- requirements.txt: runtime libraries.
+- README.md: Windows setup and launch instructions.
+- .gitignore: virtualenv, secrets, and CSV safeguards.
 
-## Future anomaly-model experiment
-Start with the transparent rule baseline. If an authorized representative time-series dataset and reviewed labels become available:
-1. Define a time-aware train/validation split to avoid leakage across nearby periods.
-2. Compare the baseline with a suitable model such as Isolation Forest.
-3. Evaluate precision@K, recall@K, false-priority rate, missing-data stability, and performance by zone where sample size allows.
-4. Ask utility experts to review false positives and false negatives.
-5. Show model score and transparent reasons separately.
-6. Do not automate dispatch without owner approval and monitored validation.
+## AI boundary and evaluation
+The current Isolation Forest fits and scores the loaded batch; this demonstrates unsupervised screening, not field detection. The batch may not represent normal network behavior, so flags depend on which records were uploaded. Do not call a flag a leak or probability, and do not combine it with priority ranking before evaluation.
 
-Do not fit a model to synthetic demo rows and report accuracy as field performance.
+For later study, secure approved representative time-series data and reviewed outcomes. Compare a transparent threshold baseline, the rule score, and model candidates using time-aware splits, precision@K/recall@K, false-priority rate, missing-data stability, and expert review. Do not train and evaluate on the same rows and claim performance.
 
-## Security and operational boundaries
-- Run locally for the capstone demo.
-- Never commit real utility data, credentials, or private exports to source control.
-- Do not use raw utility data in screenshots, slides, or a public repository.
-- Do not add automated valve or pump control.
-- Do not send uploads to external AI services.
-- A later pilot requires written data authorization, access controls, retention/deletion rules, and an operational owner.
+## Privacy and operations
+- Process uploads during the app session; do not persist them or send them to external AI services.
+- Discard unknown columns before display/export.
+- Keep review statuses in Streamlit session state only.
+- Never connect to valves, pumps, dispatch, or production systems.
+- Keep personal data, credentials, and private CSVs out of source control.
+- A future pilot requires written authorization, access controls, retention/deletion rules, and an operational owner.
 
-## Local run instructions
-From the project directory:
-
-    python -m venv .venv
-
-Activate the environment, then run:
-
-    python -m pip install -r requirements.txt
-    streamlit run app.py
-
-Open the local address printed by Streamlit. The app starts with synthetic demo data. Use the sidebar to try a CSV following 02_DATA_SPEC.md.
+## Run locally
+From the project root, create and activate a Python virtual environment, install requirements.txt, then run python -m streamlit run app.py. Start with synthetic mode; the app presents its limits and a CSV template.
