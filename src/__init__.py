@@ -1,1 +1,1 @@
-"""Application modules for WASAC Triage."""
+"""Application modules for AquaTriage."""

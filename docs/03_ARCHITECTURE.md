@@ -1,4 +1,4 @@
-# Architecture: WASAC Triage
+# Architecture: AquaTriage
 
 ## Runtime flow
 

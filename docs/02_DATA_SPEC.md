@@ -1,4 +1,4 @@
-# Data Specification: WASAC Triage
+# Data Specification: AquaTriage
 
 ## Purpose
 One row represents a candidate event for human review; the app does not diagnose a leak. Built-in records are fictional. Use utility data only after the owner approves fields, anonymization, access, purpose, retention, and deletion.

@@ -1,10 +1,11 @@
-# WASAC Triage
+# AquaTriage
 
 A local bachelor-project prototype that prioritizes suspected water-network events for human inspection. It combines a transparent weighted score with an optional experimental Isolation Forest screen. It is not a leak diagnosis, production WASAC integration, leak probability, or automatic dispatch system.
 
 ## Start locally (Windows PowerShell)
 
-    cd "$env:USERPROFILE\Desktop\wasac-triage-app"
+Open a PowerShell terminal in the project root, then run:
+
     python -m venv .venv
     .\.venv\Scripts\Activate.ps1
     python -m pip install -r requirements.txt

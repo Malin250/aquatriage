@@ -1,4 +1,4 @@
-# Product Requirements Document: WASAC Triage
+# Product Requirements Document: AquaTriage
 
 - Type: Bachelor capstone decision-support prototype
 - Primary prospective partner: WASAC Utility Ltd
@@ -6,7 +6,7 @@
 - Version: 1.0
 
 ## Product summary
-WASAC Triage ranks suspected water-network leak or abnormality candidates for human inspection. It makes the baseline score explainable, shows missing inputs, and offers a separate experimental unsupervised anomaly screen. That screen explores unusual records in the current batch; it does not confirm leaks.
+AquaTriage ranks suspected water-network leak or abnormality candidates for human inspection. It makes the baseline score explainable, shows missing inputs, and offers a separate experimental unsupervised anomaly screen. That screen explores unusual records in the current batch; it does not confirm leaks.
 
 The project is a local prototype. It has no live WASAC connection, work-order integration, valve control, or production claim. Built-in records are synthetic.
 
