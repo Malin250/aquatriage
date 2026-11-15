@@ -2,55 +2,44 @@
 
 ## Runtime flow
 
-    Synthetic demo or user-uploaded CSV
-                   |
-                   v
-       src/schema.py: validate and normalize
-                   |
-                   v
-       src/scoring.py: explainable baseline
-                   |
-          +--------+----------+
-          |                   |
-          v                   v
-    Human review UI     src/anomaly.py
-    and CSV export      Isolation Forest
-          |                   |
-          +---- separate -----+
+```text
+Fictional sample / anonymized CSV / session field register
+                          |
+                          v
+          src/schema.py: normalize and validate
+                          |
+                          v
+          src/scoring.py: provisional indicator score
+                          |
+                          v
+          app.py: filters, review status, data quality, CSV export
+```
 
-The AI screen is parallel to the baseline and never changes priority_score.
-
-## Stack
-- Python 3.10+
-- Streamlit for the local dashboard.
-- pandas and NumPy for CSV handling, validation, and features.
-- Plotly for queue and data-quality charts.
-- scikit-learn IsolationForest for the optional experimental outlier screen.
-- CSV input/export; no database, external API, production credentials, or utility-system connector.
+The score is an explicitly unvalidated screening heuristic. The UI provides no site-specific treatment prescription, sensor analysis, GIS overlay, rainfall feed, or external service call.
 
 ## Code layout
-- app.py: pages, filters, user interaction, export.
-- src/schema.py: required headers, parsing, validation, discarded extras.
-- src/demo_data.py: deterministic fictional records.
-- src/scoring.py: component features, weighted priority, bands, reasons.
-- src/anomaly.py: separate batch-relative Isolation Forest flag.
-- docs/: product, data, architecture, privacy, and evaluation.
-- requirements.txt: runtime libraries.
-- README.md: Windows setup and launch instructions.
-- .gitignore: virtualenv, secrets, and CSV safeguards.
 
-## AI boundary and evaluation
-The current Isolation Forest fits and scores the loaded batch; this demonstrates unsupervised screening, not field detection. The batch may not represent normal network behavior, so flags depend on which records were uploaded. Do not call a flag a leak or probability, and do not combine it with priority ranking before evaluation.
+- `app.py`: Streamlit UI and in-memory session workflow.
+- `src/schema.py`: required observation fields, normalization, range validation, warning counts.
+- `src/scoring.py`: provisional component scaling, weighted score, bands, and explanation labels.
+- `src/demo_data.py`: deterministic fictional sample records.
+- `docs/`: product, field-data, and validation assumptions.
+- `tests/`: focused schema and scoring tests.
 
-For later study, secure approved representative time-series data and reviewed outcomes. Compare a transparent threshold baseline, the rule score, and model candidates using time-aware splits, precision@K/recall@K, false-priority rate, missing-data stability, and expert review. Do not train and evaluate on the same rows and claim performance.
+## Data and state
 
-## Privacy and operations
-- Process uploads during the app session; do not persist them or send them to external AI services.
-- Discard unknown columns before display/export.
-- Keep review statuses in Streamlit session state only.
-- Never connect to valves, pumps, dispatch, or production systems.
-- Keep personal data, credentials, and private CSVs out of source control.
-- A future pilot requires written authorization, access controls, retention/deletion rules, and an operational owner.
+CSV inputs are restricted to the declared schema before scoring/export. Field-register entries and review statuses live in Streamlit session state; there is no database or application-level durable storage. Hosting the app makes the host a data recipient, so network deployment requires a separate privacy, access, logging, retention, and deletion review.
 
-## Run locally
-From the project root, create and activate a Python virtual environment, install requirements.txt, then run python -m streamlit run app.py. Start with synthetic mode; the app presents its limits and a CSV template.
+## Validation boundary
+
+There are no validated geotechnical models, local engineering thresholds, trained erosion models, verified field outcomes, or efficacy claims. Weights, scales, slope reference, and display bands are prototype assumptions. Before a pilot, qualified local specialists must assess the rubric, safe collection workflow, score utility, false negatives, and escalation process using owner-approved local evidence. No score should delay emergency response or substitute for professional site assessment.
+
+## Local checks
+
+Run focused tests with:
+
+```powershell
+python -m pytest
+```
+
+Start the app from the repository root with `python -m streamlit run app.py` after installing `requirements.txt`.
