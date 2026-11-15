@@ -1,46 +1,47 @@
-# Data Specification: AquaTriage
+# Data Specification: Erosion-Site Observations
 
-## Purpose
-One row represents a candidate event for human review; the app does not diagnose a leak. Built-in records are fictional. Use utility data only after the owner approves fields, anonymization, access, purpose, retention, and deletion.
+## Purpose and limits
+
+One row represents an observed site for preliminary human review. Inputs are observations, not proof of cause. The schema and screening scales are prototypes; they are not an engineering survey specification or validated hazard methodology. Use the template to identify missing required headers.
 
 ## CSV contract
-UTF-8 CSV with case-sensitive headers. All headers are required. Numeric feature cells may be blank; missing values reduce coverage and are omitted from scoring.
+
+UTF-8 CSV with case-sensitive headers. All headers below are required; measurement/indicator cells may be blank. Invalid measurements become missing, never zero. Extra columns are discarded before scoring and export.
 
 | Field | Type / unit | Meaning and validation |
 |---|---|---|
-| candidate_id | string | Unique pseudonymous event ID; no customer account ID. |
-| reported_at | ISO datetime | Report/create time. Timestamps without a zone are interpreted as UTC, then displayed in Africa/Kigali. |
-| district | string | Coarse approved district label. |
-| zone_id | string | Pseudonymous operational zone, not an address. |
-| flow_baseline_lps | number, L/s | Reference flow, greater than zero. |
-| flow_observed_lps | number, L/s | Observed flow in same context, non-negative. |
-| pressure_baseline_bar | number, bar | Reference pressure, greater than zero. |
-| pressure_observed_bar | number, bar | Observed pressure, non-negative. |
-| duration_hours | number, hours | Current signal duration, non-negative. |
-| repeat_count_30d | integer | Previous candidate events in zone over the preceding 30 days, non-negative. |
-| nearby_reports_7d | integer | Corroborating reports in the same approved coarse zone over 7 days, non-negative. |
-| criticality_index | integer, 1-5 | Partner-defined asset/service criticality; agree the scale with the owner. |
+| `site_id` | string | Unique pseudonymous observation ID; not a household or person identifier. Blank IDs get a temporary session ID and warning. Duplicate IDs are warned. |
+| `assessed_at` | ISO datetime | Observation time. Naive timestamps are treated as UTC and converted to Africa/Kigali for display. |
+| `district` | string | Coarse, approved area label; blank becomes `Unknown`. Do not enter a street address. |
+| `site_type` | string | Site context, such as a roadside drain, hillside, stream bank, cultivated land, or construction area. |
+| `slope_percent` | number, percent | Measured slope percent, 0–100. Leave blank when not measured. No measurement method is prescribed here. |
+| `bare_soil_percent` | number, percent | Estimated bare-soil coverage, 0–100. Leave blank when not assessed. |
+| `drainage_concern_0_5` | integer, 0–5 | Assessor-entered ordinal concern observation. |
+| `erosion_evidence_0_5` | integer, 0–5 | Assessor-entered ordinal visible-erosion observation. |
+| `runoff_concentration_0_5` | integer, 0–5 | Assessor-entered ordinal runoff-concentration observation. |
+| `exposed_asset_0_5` | integer, 0–5 | Assessor-entered ordinal concern for people, assets, or receiving areas exposed. This is not a consequence or vulnerability assessment. |
 
-Unknown columns are discarded. Blank candidate IDs receive temporary session IDs and a warning. Duplicate IDs and blank zones are warned. Invalid numerics, negative values, non-integer counts, and criticality outside 1-5 become missing; they are never set to zero.
+For the ordinal fields, `0` means “none observed”; `1`–`5` indicate increasing concern according to an assessor-entered, **unvalidated** local scale. Use the same locally agreed rubric across assessors. If a factor was not checked, leave it blank—do not use zero. This app does not define the individual levels as an engineering standard.
 
-## Baseline component formulas
-Components are clipped to 0-100. Weights sum to 100%.
+Blank `district` and `site_type` become display placeholders. Numeric parse errors and values outside the specified ranges become missing and are reported. Counts of invalid values are cell-level, not row-level. The app does not geocode or enrich the data.
 
-| Component | Weight | Formula |
+## Provisional screening calculation
+
+Components are scaled to 0–100 and combined as a weighted mean over available values. All choices below are **unvalidated demo assumptions**, not technical standards:
+
+| Component | Weight | Prototype scale |
 |---|---:|---|
-| Flow anomaly | 18% | 100 * clip((observed / baseline - 1) / 1.0, 0, 1) |
-| Pressure drop | 12% | 100 * clip(((baseline - observed) / baseline) / 0.35, 0, 1) |
-| Persistence | 25% | 100 * clip(duration_hours / 24, 0, 1) |
-| Repeat events | 15% | 100 * clip(repeat_count_30d / 5, 0, 1) |
-| Nearby reports | 15% | 100 * clip(nearby_reports_7d / 3, 0, 1) |
-| Asset criticality | 15% | 100 * criticality_index / 5 |
+| Visible erosion evidence | 30% | ordinal rating / 5 × 100 |
+| Drainage concern | 20% | ordinal rating / 5 × 100 |
+| Concentrated runoff | 20% | ordinal rating / 5 × 100 |
+| Exposed people, assets, or receiving areas | 15% | ordinal rating / 5 × 100 |
+| Bare soil | 10% | entered percent |
+| Slope | 5% | entered percent / 30 × 100, capped at 100 |
 
-clip limits a value to the 0-1 range. Scales and display bands are assumptions, not engineering standards; validate them with the owner and reviewed outcomes.
+Missing components are omitted and the remaining weights renormalized. Coverage is the sum of original weights with valid observations. It is not confidence; two sites with different coverage may not be comparable.
 
-Priority is the weighted average of available components. Missing feature weights are omitted and remaining weights renormalized. With no valid components, the record is unranked. Input coverage is the fraction of original scoring weight represented by valid components. It is not confidence or probability.
+Display bands are `Higher review priority` (score ≥70), `Review` (≥40), `Routine review` (<40), or `Unranked` (no valid indicator). These labels do not imply safety, hazard severity, failure probability, urgency, or a treatment. Validate the features, field rubric, slope reference, weights, bands, and missing-data behavior with local specialists and reviewed outcomes before operational use.
 
-## Experimental AI fields
-Isolation Forest uses available component scores as features. It runs only with at least 20 candidate rows, each eligible row having at least three valid components, and at least three sufficiently populated features. Missing model inputs are median-imputed within the batch. The model uses contamination 0.10; flag/index are exploratory and relative to the current batch. The index is not a probability and does not change the baseline score.
+## Privacy and retention
 
-## Privacy
-Do not collect names, phone numbers, account IDs, credentials, precise household locations, or raw customer reports. Use aggregate corroboration counts and pseudonymous zones. The local app does not write uploads to a database; statuses are temporary. Never commit real exports to source control.
+Do not include names, account IDs, phone numbers, exact household locations, credentials, or raw personal reports. Use owner-approved pseudonymous IDs and coarse areas only. The prototype holds observations and statuses in Streamlit session memory, not a database. A hosted deployment transmits uploads to its server; assess hosting access, logs, retention, and deletion before entering non-public data. Never commit real exports.

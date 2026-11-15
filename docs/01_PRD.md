@@ -1,89 +1,48 @@
-# Product Requirements Document: AquaTriage
+# Product Requirements: AquaTriage
 
-- Type: Bachelor capstone decision-support prototype
-- Primary prospective partner: WASAC Utility Ltd
-- Potential innovation partner: MININFRA
-- Version: 1.0
+## Product purpose
 
-## Product summary
-AquaTriage ranks suspected water-network leak or abnormality candidates for human inspection. It makes the baseline score explainable, shows missing inputs, and offers a separate experimental unsupervised anomaly screen. That screen explores unusual records in the current batch; it does not confirm leaks.
+AquaTriage is a local Streamlit prototype for capturing, screening, and organizing erosion-site observations for human follow-up. It provides a small field register, CSV import/export, data-quality feedback, and a transparent but **unvalidated** screening score.
 
-The project is a local prototype. It has no live WASAC connection, work-order integration, valve control, or production claim. Built-in records are synthetic.
+The project does not establish erosion causation, slope stability, likelihood of failure, safety, treatment selection, or field efficacy. It is not an emergency system and has no live GIS, rainfall, monitoring, agency, dispatch, or contractor integration.
 
-## Problem
-Operations staff may receive several candidate reports or telemetry anomalies while having limited time for inspection. A consistent queue can help compare evidence and identify where a human reviewer may want to look first. Validate the real workflow and approved data with WASAC before claiming operational fit.
+## Intended users
 
-## Users
-- Operations analyst / dispatcher: loads an approved list, filters and reviews candidates, exports an inspection worklist.
-- Supervisor: reviews score assumptions and outcome measures.
-- Field technician: completes inspections through existing utility processes.
-- Student developer: builds the prototype and documents its evaluation and limits.
+- Field observer: records pseudonymous site details and what was observed.
+- Reviewer or supervisor: checks data quality, compares indicators, plans human follow-up, and exports a worklist.
+- Qualified local professional: validates site conditions, risks, and any site-specific interventions.
 
-## Goals
-1. Create a reproducible, explainable ranking for candidate events.
-2. Make missing and invalid values visible.
-3. Demonstrate AI/data science using a separately labeled Isolation Forest experiment.
-4. Automate CSV checks, feature calculations, ranking, reason generation, and export.
-5. Compare the transparent baseline and experimental screen against reviewed outcomes before proposing a pilot.
+## Core flow
 
-## Non-goals and safeguards
-- No claim this is Rwanda's first leak-related solution.
-- No automatic leak confirmation, dispatch, or equipment control.
-- No household profiling or customer-identifying input.
-- No unauthorized utility data.
-- No assertion that a score is probability, field accuracy, or guaranteed water savings.
-- AI anomaly results do not modify or combine with the human priority score.
+1. Start a session-only field register, choose fictional sample records, or upload an anonymized CSV.
+2. Record a site observation with a pseudonymous ID and coarse approved area; unassessed fields remain blank.
+3. Review the preliminary queue, reason indicators, and missing-data coverage.
+4. Filter the queue, update a temporary human review status, and export the filtered observations.
 
-## MVP features
-- Streamlit local dashboard with synthetic demo mode and CSV upload.
-- Fixed CSV schema and row-level validation.
-- Weighted 0-100 transparent score, display band, reasons, and input coverage.
-- Optional Isolation Forest screen fit and scored on the loaded batch.
-- Outlier flag and within-batch index displayed separately from priority.
-- District and band filters, case detail, session-only review status, queue export, and template download.
-- Data-quality summary and synthetic-data labels.
-- No database or outbound API calls.
+## Functional requirements
 
-## Core user tasks and acceptance criteria
-1. Start the app and see clearly labeled synthetic records.
-2. Upload a CSV; see missing headers or a ranked queue.
-3. See invalid/missing readings reflected in coverage, not silently changed to zero.
-4. Filter cases and inspect score components and reason codes.
-5. Run or skip the experimental AI screen and see its limitations.
-6. Set a review status for the current session and export a filtered CSV.
-7. Confirm extra columns are discarded and not included in view/export.
+- Clearly separate fictional sample data from user-provided data.
+- Support a downloadable CSV template and reject uploads that do not contain the full required header set.
+- Normalize inputs and exclude invalid measurements rather than silently converting them to zero.
+- Make duplicate site IDs, invalid cells, discarded columns, and missing inputs visible.
+- Rank only on available indicators and report the fraction of scoring weight represented.
+- Keep review status in the current Streamlit session; do not persist uploads to a database.
+- Export only the declared observation and scoring fields; unknown source columns are discarded.
+- Provide search and filters for area, site type, queue band, and review status.
+- Preserve a no-data state that directs the user to add an observation, upload a template, or open the demo.
 
-## Baseline score
-| Component | Weight |
-|---|---:|
-| Flow anomaly | 18% |
-| Pressure drop | 12% |
-| Signal persistence | 25% |
-| Repeat events in zone | 15% |
-| Nearby reports | 15% |
-| Asset criticality | 15% |
+## Provisional scoring assumptions
 
-Feature scales are in docs/02_DATA_SPEC.md. Valid weights are renormalized per row when data is missing. Coverage reports the valid original weight fraction. Initial bands (High >=70, Review >=40, Routine <40) are demo assumptions that require partner review.
+Indicator weights, scaling, and display bands are project assumptions documented in [02_DATA_SPEC.md](02_DATA_SPEC.md). Missing input weights are renormalized for a score, so scores from records with different coverage may not be comparable. Neither the score nor its band is a hazard class, probability, engineering threshold, or validated prioritization method.
 
-## AI and data science
-Isolation Forest operates on the six engineered 0-100 component features. It needs at least 20 rows with at least three valid components, uses median imputation, and has a fixed 10% contamination setting for this experiment. It is fit only to the currently loaded batch. Its relative outlier index is not probability or leak likelihood. Model output does not affect the baseline priority score.
+## Safety and data governance
 
-The candidate batch may contain selected events rather than representative normal network behavior. The experimental flag can change with file composition. It is not a substitute for a time-series detector, engineering threshold, or supervised model. Keep it exploratory until evaluated on approved, representative data.
+- Never enter names, precise household addresses, contact details, account identifiers, or sensitive personal reports.
+- Use only fields approved by the relevant land/data owner.
+- This tool does not determine emergency response. Immediate danger must be handled through local emergency and safeguarding procedures without waiting for app output.
+- Do not infer a site-specific erosion-control treatment from a score. A competent local erosion-control or geotechnical professional must assess causes, site context, downstream exposure, permits, and treatment suitability.
+- Local runs keep upload contents and workflow status in app-session memory. A hosted deployment sends data to its host; hosting access, logs, retention, and deletion must be reviewed before use.
 
-## Evaluation plan
-- Compare baseline top-K precision, recall, false-priority rate, and ranking stability against an agreed threshold baseline when reviewed outcomes exist.
-- Evaluate AI flags separately: precision/recall on reviewed cases, stability under missing data, and expert review of false positives.
-- Never report synthetic-data performance as real-world accuracy.
-- Conduct a small consented usability session and document participants, tasks, and limitations.
-- Agree pilot baseline, duration, owner, and impact measures with WASAC before a field claim.
+## Field validation required before deployment
 
-## Privacy and governance
-Use synthetic records for public demos. Before utility data, get written approval for purpose, fields, access, retention, and deletion. Exclude customer identifiers, precise household coordinates, account numbers, contact details, and credentials. Review status stays in session state; uploaded records are not persisted to a database.
-
-## Build sequence
-1. Confirm workflow and capstone scope with a supervisor/partner.
-2. Run the local synthetic demo and review scoring/data rules.
-3. Gather usability feedback.
-4. Request only approved anonymized records if a partner permits them.
-5. Establish outcome labels and baseline evaluation.
-6. Present measured results and limitations; propose a supervised pilot only with partner approval.
+Obtain owner authorization; define a local observation rubric with trained users; assess accessibility, safe field use, privacy, and consent; review scores and misses against independent local expert assessment and follow-up outcomes; measure error patterns and ranking stability; agree a qualified operational owner, escalation procedures, retention rules, and field-study protocol. The current repository provides none of that evidence and is not production-ready.
